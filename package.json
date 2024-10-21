@@ -14,9 +14,11 @@
     "@remix-run/node": "^2.13.1",
     "@remix-run/react": "^2.13.1",
     "@remix-run/serve": "^2.13.1",
+    "@types/recharts": "^1.8.29",
     "isbot": "^4.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "recharts": "^2.13.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.13.1",
