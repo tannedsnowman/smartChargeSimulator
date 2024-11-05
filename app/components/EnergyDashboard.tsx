@@ -53,6 +53,7 @@ export default function EnergyDashboard() {
   const [dischargingCRate, setDischargingCRate] = useState(0.5);
   const [highSolar, setHighSolar] = useState(false);
   const [highLoad, setHighLoad] = useState(false);
+  const [noSolarAndLoad, setNoSolarAndLoad] = useState(false);
   const [pricingStructure, setPricingStructure] = useState<string>("normal");
   const [showGoodImportHours, setShowGoodImportHours] = useState(true);
   const [showGoodExportHours, setShowGoodExportHours] = useState(true);
@@ -60,6 +61,8 @@ export default function EnergyDashboard() {
   const pricingStructures: PricingStructure[] = [
     { name: "Normal", key: "normal" },
     { name: "Simple Cheaper Tariff", key: "simpleCheaper" },
+    { name: "Variable Cheap Rates Low Export", key: "variableCheapRatesLowExport" },
+    { name: "Negative Import and Export Price", key: "negativeImportandExportPrice" },
   ];
 
   const fetchData = () => {
@@ -72,6 +75,7 @@ export default function EnergyDashboard() {
         dischargingCRate: dischargingCRate.toString(),
         highSolar: highSolar.toString(),
         highLoad: highLoad.toString(),
+        noSolarAndLoad: noSolarAndLoad.toString(),
         pricingStructure: pricingStructure
       },
       { method: "get", action: "/energy" }
@@ -88,6 +92,7 @@ export default function EnergyDashboard() {
     dischargingCRate,
     highSolar,
     highLoad,
+    noSolarAndLoad,
     pricingStructure
   ]);
 
@@ -113,16 +118,6 @@ export default function EnergyDashboard() {
       name.includes('Price') ? formatPrice(value) : value.toFixed(2),
       name
     ];
-  };
-
-  // Define colors for different actions
-  const actionColors = {
-    Charging: "rgba(0, 255, 0, 0.2)",
-    Discharging: "rgba(255, 0, 0, 0.2)",
-    "Self-using": "rgba(0, 0, 255, 0.2)",
-    Idle: "rgba(128, 128, 128, 0.2)",
-    "Good Import": "rgba(0, 128, 255, 0.2)",
-    "Good Export": "rgba(255, 128, 0, 0.2)",
   };
 
   // Function to determine action zones
@@ -262,6 +257,17 @@ export default function EnergyDashboard() {
                 className="form-checkbox"
               />
               <span>High Load</span>
+            </label>
+          </div>
+          <div>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={noSolarAndLoad}
+                onChange={(e) => setNoSolarAndLoad(e.target.checked)}
+                className="form-checkbox"
+              />
+              <span>No Solar, No Load</span>
             </label>
           </div>
           <div className="mb-4">

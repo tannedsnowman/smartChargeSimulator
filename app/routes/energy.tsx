@@ -11,6 +11,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const dischargingCRate = Number(url.searchParams.get("dischargingCRate") ?? "0.5");
   const highSolar = url.searchParams.get("highSolar") === "true";
   const highLoad = url.searchParams.get("highLoad") === "true";
+  const noSolarAndLoad = url.searchParams.get("noSolarAndLoad") === "true";
   const pricingStructure = url.searchParams.get("pricingStructure") ?? "normal";
 
   const analysisResult = await getAnalyzedEnergyData({
@@ -21,6 +22,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     dischargingCRate,
     highSolar,
     highLoad,
+    noSolarAndLoad,
     pricingStructure,
   });
   //console.log(analysisResult);

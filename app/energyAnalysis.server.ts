@@ -202,11 +202,12 @@ const scenarios = {
     solarMultiplier: 0.5,
     loadMultiplier: 0.5,
   },
-  noSolar: {
-    name: "No Solar",
+  noLoadAndNoSolar: {
+    name: "No Load, No Solar",
     solarMultiplier: 0,
-    loadMultiplier: 1,
-  },
+    loadMultiplier: 0,
+  }
+
 };
 
 // Add this new interface
@@ -241,6 +242,58 @@ const pricingStructures: Record<string, PricingStructure> = {
         return importPrice * (0.9 + Math.random() * 0.1); // Higher during sunny hours
       } else {
         return importPrice * (0.7 + Math.random() * 0.1); // Lower during other times
+      }
+    }
+  },
+  variableCheapRatesLowExport: {
+    getImportPrice: (hour: number) => {
+      if (hour >= 0 && hour < 6) {
+        return 0.05 + Math.random() * 0.05; // Night time (low)
+      } else if (hour >= 6 && hour < 9) {
+        return 0.15 + Math.random() * 0.05; // Morning peak
+      } else if (hour >= 9 && hour < 17) {
+        return 0.10 + Math.random() * 0.05; // Daytime
+      } else if (hour >= 17 && hour < 22) {
+        return 0.20 + Math.random() * 0.05; // Evening peak
+      } else {
+        return 0.08 + Math.random() * 0.05; // Late evening
+      }
+    },
+    getExportPrice: (hour: number) => {
+      const importPrice = pricingStructures.normal.getImportPrice(hour);
+      if (hour >= 17 && hour < 21) {
+        return importPrice * (0.4 + Math.random() * 0.1); // Higher during evening peak
+      } else if (hour >= 6 && hour < 10) {
+        return importPrice * (0.6 + Math.random() * 0.1); // Higher during morning peak
+      } else if (hour >= 10 && hour < 16) {
+        return importPrice * (0.15 + Math.random() * 0.1); // Higher during sunny hours
+      } else {
+        return importPrice * (0.1 + Math.random() * 0.1); // Lower during other times
+      }
+    }
+
+  },
+  negativeImportandExportPrice: {
+    getImportPrice: (hour: number) => {
+      if (hour >= 0 && hour < 6) {
+        return -0.05 - Math.random() * 0.05; // Night time (low)
+      } else if (hour >= 6 && hour < 9) {
+        return 0.15 + Math.random() * 0.05; // Morning peak
+      } else if (hour >= 9 && hour < 17) {
+        return 0.10 + Math.random() * 0.05; // Daytime
+      } else if (hour >= 17 && hour < 22) {
+        return 0.20 + Math.random() * 0.05; // Evening peak
+      } else {
+        return 0.08 + Math.random() * 0.05; // Late evening
+      }
+    },
+    getExportPrice: (hour: number) => {
+      if (hour >= 0 && hour < 6) {
+        return -0.05 - Math.random() * 0.05;
+      } else if (hour >= 10 && hour < 16) {
+        return 0.05 + Math.random() * 0.05;
+      } else {
+        return 0.15 + Math.random() * 0.05;
       }
     }
   },
@@ -445,6 +498,7 @@ export async function getAnalyzedEnergyData({
   dischargingCRate,
   highSolar,
   highLoad,
+  noSolarAndLoad,
   pricingStructure = "normal"
 }: {
   batteryCapacity: number;
@@ -454,11 +508,14 @@ export async function getAnalyzedEnergyData({
   dischargingCRate: number;
   highSolar: boolean;
   highLoad: boolean;
+  noSolarAndLoad: boolean;
   pricingStructure: string;
 }) {
   // Determine which scenario to use based on highSolar and highLoad
   let scenarioKey: keyof typeof scenarios;
-  if (highSolar && highLoad) {
+  if (noSolarAndLoad) {
+    scenarioKey = "noLoadAndNoSolar";
+  } else if (highSolar && highLoad) {
     scenarioKey = "highSolarHighLoad";
   } else if (highSolar && !highLoad) {
     scenarioKey = "highSolarLowLoad";
