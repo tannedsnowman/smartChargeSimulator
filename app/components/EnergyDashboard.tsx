@@ -1,7 +1,6 @@
 import { useLoaderData, useFetcher, Form } from "@remix-run/react";
-import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, ReferenceLine, ComposedChart, ReferenceArea } from 'recharts';
+import { AreaChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, ReferenceLine, ComposedChart, ReferenceArea } from 'recharts';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area } from 'recharts';
 
 interface AnalyzedHourlyData {
   hour: number;
@@ -23,7 +22,9 @@ interface EnergySummary {
   totalGridExport: number;
   totalSolarGeneration: number;
   totalImportCost: number;
+  totalImportCost2: number;
   totalExportProfit: number;
+  totalExportProfit2: number;
   netCost: number;
   finalBatteryCapacity: number;
   goodImportHours: AnalyzedHourlyData[];
@@ -47,22 +48,23 @@ export default function EnergyDashboard() {
   const initialData = useLoaderData<EnergyDataResults>();
   const fetcher = useFetcher<EnergyDataResults>();
   const [batteryCapacity, setBatteryCapacity] = useState(10);
-  const [chargingEfficiency, setChargingEfficiency] = useState(0.95);
-  const [dischargingEfficiency, setDischargingEfficiency] = useState(0.95);
-  const [chargingCRate, setChargingCRate] = useState(0.5);
-  const [dischargingCRate, setDischargingCRate] = useState(0.5);
+  const [chargingEfficiency, setChargingEfficiency] = useState(0.97);
+  const [dischargingEfficiency, setDischargingEfficiency] = useState(0.97);
   const [highSolar, setHighSolar] = useState(false);
   const [highLoad, setHighLoad] = useState(false);
-  const [noSolarAndLoad, setNoSolarAndLoad] = useState(false);
+  const [noSolarAndLoad, setNoSolarAndLoad] = useState(true);
   const [pricingStructure, setPricingStructure] = useState<string>("normal");
   const [showGoodImportHours, setShowGoodImportHours] = useState(true);
   const [showGoodExportHours, setShowGoodExportHours] = useState(true);
+  const [chargingEfficiency2, setChargingEfficiency2] = useState(0.94);
+  const [dischargingEfficiency2, setDischargingEfficiency2] = useState(0.94);
 
   const pricingStructures: PricingStructure[] = [
     { name: "Normal", key: "normal" },
     { name: "Simple Cheaper Tariff", key: "simpleCheaper" },
     { name: "Variable Cheap Rates Low Export", key: "variableCheapRatesLowExport" },
     { name: "Negative Import and Export Price", key: "negativeImportandExportPrice" },
+    { name: "Stable Price", key: "stablePrice" }
   ];
 
   const fetchData = () => {
@@ -71,8 +73,9 @@ export default function EnergyDashboard() {
         batteryCapacity: batteryCapacity.toString(),
         chargingEfficiency: chargingEfficiency.toString(),
         dischargingEfficiency: dischargingEfficiency.toString(),
-        chargingCRate: chargingCRate.toString(),
-        dischargingCRate: dischargingCRate.toString(),
+        chargingEfficiency2: chargingEfficiency2.toString(),
+        dischargingEfficiency2: dischargingEfficiency2.toString(),
+
         highSolar: highSolar.toString(),
         highLoad: highLoad.toString(),
         noSolarAndLoad: noSolarAndLoad.toString(),
@@ -88,8 +91,6 @@ export default function EnergyDashboard() {
     batteryCapacity,
     chargingEfficiency,
     dischargingEfficiency,
-    chargingCRate,
-    dischargingCRate,
     highSolar,
     highLoad,
     noSolarAndLoad,
@@ -120,39 +121,8 @@ export default function EnergyDashboard() {
     ];
   };
 
-  // Function to determine action zones
-  const getActionZones = (data: AnalyzedHourlyData[]) => {
-    const zones = [];
-    let currentZone = null;
 
-    for (let i = 0; i < data.length; i++) {
-      const hour = data[i];
-      if (!currentZone || currentZone.action !== hour.action) {
-        if (currentZone) {
-          zones.push(currentZone);
-        }
-        currentZone = { start: hour.hour, end: hour.hour, action: hour.action, reason: hour.reason };
-      } else {
-        currentZone.end = hour.hour;
-      }
 
-      // Add good import and export zones
-      if (showGoodImportHours && hour.reason === "Good Import") {
-        zones.push({ start: hour.hour, end: hour.hour + 1, action: 'Good Import', reason: 'Favorable import price' });
-      }
-      if (showGoodExportHours && hour.reason === "Good Export") {
-        zones.push({ start: hour.hour, end: hour.hour + 1, action: 'Good Export', reason: 'Favorable export price' });
-      }
-    }
-
-    if (currentZone) {
-      zones.push(currentZone);
-    }
-
-    return zones;
-  };
-
-  const actionZones = getActionZones(hourlyData);
 
   // New function to prepare data for good import/export charts
   const prepareZoneData = (data: AnalyzedHourlyData[], zoneType: 'import' | 'export') => {
@@ -167,8 +137,7 @@ export default function EnergyDashboard() {
 
   const goodImportData = prepareZoneData(hourlyData, 'import');
   const goodExportData = prepareZoneData(hourlyData, 'export');
-  console.log("goodImportData", goodImportData)
-  console.log("goodExportData", goodExportData)
+
 
   // Modify the hourly data to include good import and export indicators
   const enhancedHourlyData = hourlyData.map(hour => ({
@@ -193,33 +162,76 @@ export default function EnergyDashboard() {
               className="border rounded p-1 w-full"
             />
           </div>
-          <div>
-            <label htmlFor="chargingEfficiency" className="block">Charging Efficiency:</label>
-            <input
-              type="number"
-              id="chargingEfficiency"
-              name="chargingEfficiency"
-              value={chargingEfficiency}
-              onChange={(e) => setChargingEfficiency(Number(e.target.value))}
-              className="border rounded p-1 w-full"
-              step="0.01"
-              min="0"
-              max="1"
-            />
-          </div>
-          <div>
-            <label htmlFor="dischargingEfficiency" className="block">Discharging Efficiency:</label>
-            <input
-              type="number"
-              id="dischargingEfficiency"
-              name="dischargingEfficiency"
-              value={dischargingEfficiency}
-              onChange={(e) => setDischargingEfficiency(Number(e.target.value))}
-              className="border rounded p-1 w-full"
-              step="0.01"
-              min="0"
-              max="1"
-            />
+          <div className="grid grid-cols-2 gap-8 mb-4">
+            {/* Battery 1 */}
+            <div className="p-4 border rounded-lg bg-blue-50">
+              <h3 className="font-semibold mb-2">Battery 1</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="chargingEfficiency" className="block">Charging Efficiency:</label>
+                  <input
+                    type="number"
+                    id="chargingEfficiency"
+                    name="chargingEfficiency"
+                    value={chargingEfficiency}
+                    onChange={(e) => setChargingEfficiency(Number(e.target.value))}
+                    className="border rounded p-1 w-full"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dischargingEfficiency" className="block">Discharging Efficiency:</label>
+                  <input
+                    type="number"
+                    id="dischargingEfficiency"
+                    name="dischargingEfficiency"
+                    value={dischargingEfficiency}
+                    onChange={(e) => setDischargingEfficiency(Number(e.target.value))}
+                    className="border rounded p-1 w-full"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Battery 2 */}
+            <div className="p-4 border rounded-lg bg-green-50">
+              <h3 className="font-semibold mb-2">Battery 2</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="chargingEfficiency2" className="block">Charging Efficiency:</label>
+                  <input
+                    type="number"
+                    id="chargingEfficiency2"
+                    name="chargingEfficiency2"
+                    value={chargingEfficiency2}
+                    onChange={(e) => setChargingEfficiency2(Number(e.target.value))}
+                    className="border rounded p-1 w-full"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dischargingEfficiency2" className="block">Discharging Efficiency:</label>
+                  <input
+                    type="number"
+                    id="dischargingEfficiency2"
+                    name="dischargingEfficiency2"
+                    value={dischargingEfficiency2}
+                    onChange={(e) => setDischargingEfficiency2(Number(e.target.value))}
+                    className="border rounded p-1 w-full"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <div>
             <label htmlFor="pricingStructure" className="block">Pricing Structure:</label>
@@ -289,6 +301,7 @@ export default function EnergyDashboard() {
               />
               <span className="ml-2">Show Good Export Hours</span>
             </label>
+            
           </div>
           {/* ... existing code for other inputs ... */}
         </div>
@@ -306,8 +319,10 @@ export default function EnergyDashboard() {
           <ComposedChart data={enhancedHourlyData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="hour" />
+            {/* make the kwh for battery y-axis range from 0 to batteryCapacity */}
             <YAxis 
               yAxisId="left" 
+              range={[0, batteryCapacity]}
               label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft' }} 
             />
             <YAxis 
@@ -328,9 +343,9 @@ export default function EnergyDashboard() {
               name="Grid Power" 
               yAxisId="left" 
             />
-            <Line type="monotone" dataKey="load" stroke="#82ca9d" name="Load" yAxisId="left" strokeWidth={2} />
-            <Line type="monotone" dataKey="solarGeneration" stroke="#8884d8" name="Solar Generation" yAxisId="left" strokeWidth={2} />
-            <Line type="step" dataKey="batteryCapacity" stroke="#ff0000" name="Battery Capacity" yAxisId="left" strokeWidth={2} />
+            {/* <Line type="monotone" dataKey="load" stroke="#82ca9d" name="Load" yAxisId="left" strokeWidth={2} />
+            <Line type="monotone" dataKey="solarGeneration" stroke="#8884d8" name="Solar Generation" yAxisId="left" strokeWidth={2} /> */}
+            <Line type="monotone" dataKey="batteryCapacity" stroke="#ff0000" name="Battery Capacity" yAxisId="left" strokeWidth={2} />
             <Line type="monotone" dataKey="importPrice" stroke="#0088FE" name="Import Price" yAxisId="right" strokeDasharray="5 5" />
             <Line type="monotone" dataKey="exportPrice" stroke="#00C49F" name="Export Price" yAxisId="right" strokeDasharray="3 3" />
             
@@ -362,16 +377,39 @@ export default function EnergyDashboard() {
       </div>
       <div>
         <h3 className="text-lg font-semibold mb-2">Energy Summary</h3>
-        <ul>
-          <li>Total Load: {summary.totalLoad.toFixed(2)} kWh</li>
-          <li>Total Grid Import: {summary.totalGridImport.toFixed(2)} kWh</li>
-          <li>Total Grid Export: {summary.totalGridExport.toFixed(2)} kWh</li>
-          <li>Total Solar Generation: {summary.totalSolarGeneration.toFixed(2)} kWh</li>
-          <li>Total Import Cost: ${summary.totalImportCost.toFixed(2)}</li>
-          <li>Total Export Profit: ${summary.totalExportProfit.toFixed(2)}</li>
-          <li>Net Cost: ${summary.netCost.toFixed(2)}</li>
-          <li>Final Battery Capacity: {summary.finalBatteryCapacity.toFixed(2)} kWh ({((summary.finalBatteryCapacity / batteryCapacity) * 100).toFixed(1)}%)</li>
-        </ul>
+        <div className="grid grid-cols-2 gap-8">
+          {/* Battery 1 Summary */}
+          <div className="p-4 border rounded-lg bg-blue-50">
+            <h4 className="font-semibold mb-2">Battery 1</h4>
+            <ul>
+              <li>Import Cost: ${(summary.totalImportCost || 0).toFixed(2)}</li>
+              <li>Export Profit: ${(summary.totalExportProfit || 0).toFixed(2)}</li>
+              <li>Net Cost: ${((summary.totalImportCost || 0) - (summary.totalExportProfit || 0)).toFixed(2)}</li>
+            </ul>
+          </div>
+
+          {/* Battery 2 Summary */}
+          <div className="p-4 border rounded-lg bg-green-50">
+            <h4 className="font-semibold mb-2">Battery 2</h4>
+            <ul>
+              <li>Import Cost: ${(summary.totalImportCost2 || 0).toFixed(2)}</li>
+              <li>Export Profit: ${(summary.totalExportProfit2 || 0).toFixed(2)}</li>
+              <li>Net Cost: ${((summary.totalImportCost2 || 0) - (summary.totalExportProfit2 || 0)).toFixed(2)}</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Common metrics */}
+        <div className="mt-4">
+          <h4 className="font-semibold mb-2">Common Metrics</h4>
+          <ul>
+            <li>Total Load: {(summary.totalLoad || 0).toFixed(2)} kWh</li>
+            <li>Total Grid Import: {(summary.totalGridImport || 0).toFixed(2)} kWh</li>
+            <li>Total Grid Export: {(summary.totalGridExport || 0).toFixed(2)} kWh</li>
+            <li>Total Solar Generation: {(summary.totalSolarGeneration || 0).toFixed(2)} kWh</li>
+            <li>Final Battery Capacity: {(summary.finalBatteryCapacity || 0).toFixed(2)} kWh ({(((summary.finalBatteryCapacity || 0) / batteryCapacity) * 100).toFixed(1)}%)</li>
+          </ul>
+        </div>
       </div>
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-2">Hourly Actions and Reasons</h3>

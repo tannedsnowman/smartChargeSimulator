@@ -5,12 +5,14 @@ import { getAnalyzedEnergyData } from "~/energyAnalysis.server";
 export const loader: LoaderFunction = async ({ request }) => {
   const url = new URL(request.url);
   const batteryCapacity = Number(url.searchParams.get("batteryCapacity") ?? "10");
-  const chargingEfficiency = Number(url.searchParams.get("chargingEfficiency") ?? "0.95");
-  const dischargingEfficiency = Number(url.searchParams.get("dischargingEfficiency") ?? "0.95");
-  const chargingCRate = Number(url.searchParams.get("chargingCRate") ?? "0.5");
-  const dischargingCRate = Number(url.searchParams.get("dischargingCRate") ?? "0.5");
-  const highSolar = url.searchParams.get("highSolar") === "true";
-  const highLoad = url.searchParams.get("highLoad") === "true";
+  const chargingEfficiency = Number(url.searchParams.get("chargingEfficiency") ?? "0.97");
+  const dischargingEfficiency = Number(url.searchParams.get("dischargingEfficiency") ?? "0.97");
+  const chargingEfficiency2 = Number(url.searchParams.get("chargingEfficiency2") ?? "0.94");
+  const dischargingEfficiency2 = Number(url.searchParams.get("dischargingEfficiency2") ?? "0.94");
+  const chargingCRate = Number(url.searchParams.get("chargingCRate") ?? "1");
+  const dischargingCRate = Number(url.searchParams.get("dischargingCRate") ?? "1");
+  const highSolar = url.searchParams.get("highSolar") === "false";
+  const highLoad = url.searchParams.get("highLoad") === "false";
   const noSolarAndLoad = url.searchParams.get("noSolarAndLoad") === "true";
   const pricingStructure = url.searchParams.get("pricingStructure") ?? "normal";
 
@@ -24,6 +26,8 @@ export const loader: LoaderFunction = async ({ request }) => {
     highLoad,
     noSolarAndLoad,
     pricingStructure,
+    chargingEfficiency2,
+    dischargingEfficiency2,
   });
   //console.log(analysisResult);
 
